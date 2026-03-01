@@ -1,0 +1,57 @@
+title: GitNexus Code Intelligence
+description: >
+  AI-powered code analysis using GitNexus — a knowledge graph that maps every
+  dependency, call chain, cluster, and execution flow in your codebase.
+  Run `npx gitnexus analyze` in your repo first, then launch this recipe.
+instructions: |
+  You have access to GitNexus, a graph-powered code intelligence engine that has
+  indexed the current repository into a knowledge graph.
+
+  ## Always start here
+  1. READ `gitnexus://repos` — discover all indexed repositories.
+  2. READ `gitnexus://repo/{name}/context` — get a codebase overview and check
+     whether the index is fresh. If it reports the index is stale, tell the user
+     to run `npx gitnexus analyze` and then restart the session.
+
+  ## Available tools
+  | Tool             | Purpose                                                     |
+  |------------------|-------------------------------------------------------------|
+  | `query`          | Process-grouped hybrid search across execution flows        |
+  | `context`        | 360-degree symbol view — callers, callees, processes        |
+  | `impact`         | Blast-radius analysis — what breaks if a symbol changes     |
+  | `detect_changes` | Git-diff impact — map changed lines to affected processes   |
+  | `rename`         | Multi-file coordinated rename with graph + text search      |
+  | `cypher`         | Raw Cypher queries against the knowledge graph              |
+  | `list_repos`     | Discover all indexed repositories                           |
+
+  ## Workflows
+
+  ### Understanding code ("How does X work?")
+  1. `query({query: "<concept>"})` — find related execution flows
+  2. `context({name: "<symbol>"})` — deep-dive on a specific symbol
+  3. READ `gitnexus://repo/{name}/process/{processName}` — trace full flow
+
+  ### Blast-radius analysis ("What breaks if I change X?")
+  1. `impact({target: "<symbol>", direction: "upstream"})` — see what depends on it
+  2. `impact({target: "<symbol>", direction: "downstream"})` — see what it depends on
+
+  ### Pre-commit safety check
+  1. `detect_changes({scope: "all"})` — map your uncommitted edits to affected processes
+
+  ### Safe rename
+  1. `rename({symbol_name: "<old>", new_name: "<new>", dry_run: true})` — preview changes
+  2. `rename({symbol_name: "<old>", new_name: "<new>"})` — apply
+
+  Always prefer GitNexus tools over grep/glob when exploring this codebase —
+  the knowledge graph gives you pre-computed architectural context in one call.
+
+extensions:
+  - type: stdio
+    name: gitnexus
+    cmd: npx
+    args:
+      - "-y"
+      - "gitnexus@latest"
+      - "mcp"
+    timeout: 300
+    description: "Graph-powered code intelligence — indexes every dependency, call chain, and execution flow"
