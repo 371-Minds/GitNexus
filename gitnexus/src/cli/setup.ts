@@ -210,6 +210,66 @@ async function installClaudeCodeHooks(result: SetupResult): Promise<void> {
   }
 }
 
+async function setupGoose(result: SetupResult): Promise<void> {
+  // Goose stores its config at ~/.config/goose/config.yaml (Linux/macOS)
+  // and at %APPDATA%\goose\config.yaml (Windows).
+  const gooseDir =
+    process.platform === 'win32'
+      ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'goose')
+      : path.join(os.homedir(), '.config', 'goose');
+
+  if (!(await dirExists(gooseDir))) {
+    result.skipped.push('Goose (not installed)');
+    return;
+  }
+
+  const configPath = path.join(gooseDir, 'config.yaml');
+
+  try {
+    const isWin = process.platform === 'win32';
+    const cmd = isWin ? '    cmd: cmd' : '    cmd: npx';
+    const args = isWin
+      ? '    args: ["/c", "npx", "-y", "gitnexus@latest", "mcp"]'
+      : '    args: ["-y", "gitnexus@latest", "mcp"]';
+    const extensionYaml = [
+      '  gitnexus:',
+      '    name: gitnexus',
+      '    type: stdio',
+      cmd,
+      args,
+      '    enabled: true',
+      '    timeout: 300',
+    ].join('\n');
+
+    let raw: string;
+    try {
+      raw = await fs.readFile(configPath, 'utf-8');
+    } catch {
+      raw = '';
+    }
+
+    let updated: string;
+    if (/^\s*gitnexus:/m.test(raw)) {
+      // Already configured — skip to avoid duplicate entries.
+      result.skipped.push('Goose (gitnexus already in config.yaml)');
+      return;
+    } else if (/^extensions:/m.test(raw)) {
+      // extensions: block exists — insert our entry right after the key.
+      updated = raw.replace(/^(extensions:)/m, `$1\n${extensionYaml}`);
+    } else {
+      // No extensions block yet — append one.
+      const separator = raw.length > 0 && !raw.endsWith('\n') ? '\n' : '';
+      updated = `${raw}${separator}\nextensions:\n${extensionYaml}\n`;
+    }
+
+    await fs.mkdir(gooseDir, { recursive: true });
+    await fs.writeFile(configPath, updated, 'utf-8');
+    result.configured.push('Goose');
+  } catch (err: any) {
+    result.errors.push(`Goose: ${err.message}`);
+  }
+}
+
 async function setupOpenCode(result: SetupResult): Promise<void> {
   const opencodeDir = path.join(os.homedir(), '.config', 'opencode');
   if (!(await dirExists(opencodeDir))) {
@@ -351,10 +411,11 @@ export const setupCommand = async () => {
     errors: [],
   };
 
-  // Detect and configure each editor's MCP
+  // Detect and configure each editor/agent's MCP
   await setupCursor(result);
   await setupClaudeCode(result);
   await setupOpenCode(result);
+  await setupGoose(result);
   
   // Install global skills for platforms that support them
   await installClaudeCodeSkills(result);

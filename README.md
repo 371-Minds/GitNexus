@@ -86,6 +86,7 @@ To configure MCP for your editor, run `npx gitnexus setup` once — or set it up
 | **Cursor**      | Yes | Yes    | —                   | MCP + Skills   |
 | **Windsurf**    | Yes | —     | —                   | MCP            |
 | **OpenCode**    | Yes | Yes    | —                   | MCP + Skills   |
+| **Goose**       | Yes | —     | —                   | MCP + Recipe   |
 
 > **Claude Code** gets the deepest integration: MCP tools + agent skills + PreToolUse hooks that automatically enrich grep/glob/bash calls with knowledge graph context.
 
@@ -127,6 +128,32 @@ claude mcp add gitnexus -- npx -y gitnexus@latest mcp
     }
   }
 }
+```
+
+**Goose** (`~/.config/goose/config.yaml`):
+
+```yaml
+extensions:
+  gitnexus:
+    name: gitnexus
+    type: stdio
+    cmd: npx
+    args: ["-y", "gitnexus@latest", "mcp"]
+    enabled: true
+    timeout: 300
+```
+
+> **Quickest path:** `npx gitnexus setup` writes the Goose MCP config automatically when Goose is detected.
+
+**Goose recipe** — start a pre-configured Goose session using the bundled recipe:
+
+```bash
+# Index your repo first
+npx gitnexus analyze
+
+# Download the recipe and run it
+curl -O https://raw.githubusercontent.com/abhigyanpatwari/GitNexus/main/gitnexus/recipes/goose-gitnexus.yaml
+goose run goose-gitnexus.yaml
 ```
 
 ### CLI Commands
